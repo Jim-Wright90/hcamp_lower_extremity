@@ -41,8 +41,671 @@ theme_set(theme_minimal(15) +
 
 biif <- import(here("data", "BIIF.xlsx"),
                setclass = "tbl_df") %>% 
-  janitor::clean_names()
+  janitor::clean_names() %>% 
+  select(c(1:12, 21, 25))
+
+oia <- import(here("data", "OIA.xlsx"),
+               setclass = "tbl_df") %>% 
+  janitor::clean_names() %>% 
+  select(c(1:12, 21, 25))
+
+
+kif <- import(here("data", "KIF.xlsx"),
+               setclass = "tbl_df") %>% 
+  janitor::clean_names() %>% 
+  select(c(1:12, 21, 25))
+
+
+mil <- import(here("data", "MIL.xlsx"),
+               setclass = "tbl_df") %>% 
+  janitor::clean_names() %>% 
+  select(c(1:12, 21, 25))
+
+str(kif)
+str(mil)
+str(biif)
+str(oia)
+
+
+all_leagues <- bind_rows(biif, oia, kif, mil, .id = "dataset")
 
 
   
+
+mean_2 <- function(x) {
+  z <- na.omit(x)
+  sum(z) / length(z)
+}
+
+
+#demo code from Daniel 
+
+#header <- readxl::read_xlsx(here::here("data", "demo_data.xlsx"),
+                            #n_max = 1)
+
+#columns <- readxl::read_xlsx(here::here("data", "demo_data.xlsx"),
+                             #skip = 1, n_max = 1)
+
+#tbl <- tibble(spanner = names(header),
+              #col = names(columns)) %>% 
+  #mutate(spanner = gsub("\\.{3}\\d\\d?", NA_character_, spanner),
+         #col = gsub("\\.{3}\\d\\d?", "", col)) %>% 
+  #fill(spanner)
+
+#new_names <- apply(tbl, 1, function(x) paste0(x[!is.na(x)], collapse = "_"))
+
+#demo_data <- readxl::read_xlsx(here::here("data", "demo_data.xlsx"))
+
+#names(demo_data) <- new_names
+
+#demo_data %>% 
+  #janitor::clean_names()
+```
+
+```{r, include=FALSE}
+create_react <- function(df, var) {
+    df %>% 
+      summarize(Mean = mean({{var}}),
+                SD = sd({{var}}),
+                Min = min({{var}}),
+                Max = max({{var}}),
+                Total = length({{var}})) %>% 
+      mutate_if(is.numeric, round, 2) %>% 
+      reactable(columns = list(
+        Mean = colDef(format = colFormat(separators = TRUE)),
+        SD = colDef(format = colFormat(separators = TRUE)),
+        Min = colDef(format = colFormat(separators = TRUE)),
+        Max = colDef(format = colFormat(separators = TRUE)),
+        Total = colDef(format = colFormat(separators = TRUE))
+      ))
+}
+
+```
+
+```{r, include=FALSE}
+all_leagues %>% 
+  count(injury)
+
+all_leagues %>% 
+  count(days_missed)
+
+all_leagues$days_missed
+
+mean_2(all_leagues$days_missed)
+
+#days missed by injury 
+
+injury_type <- all_leagues %>% 
+  group_by(injury) %>% 
+  summarize(mean(days_missed))
+
+all_leagues$injury
+
+all_leagues %>% 
+  count(injury)
+```
+
+```{r, include=FALSE}
+injury_total <- all_leagues %>% 
+  count(injury) %>% 
+  arrange(desc(n))
+```
+
+```{r, include=FALSE}
+# filter data set for people with concussion as first injury
+
+multiple_injury <- all_leagues %>% 
+  group_by(student_id) %>% 
+  mutate(number = row_number()) %>% 
+  ungroup() %>% 
+  pivot_wider(
+    id_cols = student_id, 
+    names_from = number,
+    values_from = c(injury, onset),
+    names_glue = "{.value}_{number}"
+  )
+
+# filter to concussion as first injury 
+
+concussion_first_injury <- multiple_injury %>% 
+  filter(injury_1 == "Head Concussion") %>% 
+  select(c(1:3)) %>% 
+  na.omit()
+
+#filter injury onset dates 
+
+multiple_injury_onset_dates <- all_leagues %>% 
+  group_by(student_id) %>% 
+  mutate(number = row_number()) %>% 
+  ungroup() %>% 
+  pivot_wider(
+    id_cols = student_id, 
+    names_from = number,
+    values_from = c(onset),
+    names_glue = "{.value}_{number}"
+  ) %>% 
+  select(c(1:3)) %>% 
+  na.omit()
+
+join_1 <- left_join(concussion_first_injury, multiple_injury_onset_dates)
+
+# next things to widen are days missed, repeated concussion for injury 1, sport, and age
+
+# then need to combine age, gender, name, league, and school
+
+#days missed
+days_missed <- all_leagues %>% 
+  group_by(student_id) %>% 
+  mutate(number = row_number()) %>% 
+  ungroup() %>% 
+  pivot_wider(
+    id_cols = student_id, 
+    names_from = number,
+    values_from = c(days_missed),
+    names_glue = "{.value}_{number}"
+  ) %>% 
+  select(c(1:3)) %>% 
+  na.omit()
+
+join_days_missed <- left_join(join_1, days_missed)
+
+
+#repeated concussion
+repeat_concussion <- all_leagues %>% 
+  group_by(student_id) %>% 
+  mutate(number = row_number()) %>% 
+  ungroup() %>% 
+  pivot_wider(
+    id_cols = student_id, 
+    names_from = number,
+    values_from = c(repeated_concussion),
+    names_glue = "{.value}_{number}"
+  ) %>% 
+  select(c(1:2)) 
+
+repeat_concussion %>% 
+  count(repeated_concussion_1)
+
+#I don't think repeat concussion variable will be helpful but keep code and df to show them in meeting 
+
+#school year
+school_year <- all_leagues %>% 
+  group_by(student_id) %>% 
+  mutate(number = row_number()) %>% 
+  ungroup() %>% 
+  pivot_wider(
+    id_cols = student_id, 
+    names_from = number,
+    values_from = c(school_year),
+    names_glue = "{.value}_{number}"
+  ) %>% 
+  select(c(1:3)) %>% 
+  na.omit()
+
+join_school_year <- left_join(join_days_missed, school_year)
+
+# last name
+last_name <- all_leagues %>% 
+  group_by(student_id) %>% 
+  mutate(number = row_number()) %>% 
+  ungroup() %>% 
+  pivot_wider(
+    id_cols = student_id, 
+    names_from = number,
+    values_from = c(last_name),
+    names_glue = "{.value}_{number}"
+  ) %>% 
+  select(c(1:3)) %>% 
+  na.omit()
+
+join_last_name <- left_join(join_school_year, last_name)
+
+#first name
+first_name <- all_leagues %>% 
+  group_by(student_id) %>% 
+  mutate(number = row_number()) %>% 
+  ungroup() %>% 
+  pivot_wider(
+    id_cols = student_id, 
+    names_from = number,
+    values_from = c(first_name),
+    names_glue = "{.value}_{number}"
+  ) %>% 
+  select(c(1:3)) %>% 
+  na.omit()
+
+join_first_name <- left_join(join_last_name, first_name)
+
+#school
+
+school <- all_leagues %>% 
+  group_by(student_id) %>% 
+  mutate(number = row_number()) %>% 
+  ungroup() %>% 
+  pivot_wider(
+    id_cols = student_id, 
+    names_from = number,
+    values_from = c(school),
+    names_glue = "{.value}_{number}"
+  ) %>% 
+  select(c(1:3)) %>% 
+  na.omit()
+
+join_school <- left_join(join_first_name, school)
+
+
+#league
+
+league <- all_leagues %>% 
+  group_by(student_id) %>% 
+  mutate(number = row_number()) %>% 
+  ungroup() %>% 
+  pivot_wider(
+    id_cols = student_id, 
+    names_from = number,
+    values_from = c(league),
+    names_glue = "{.value}_{number}"
+  ) %>% 
+  select(c(1:3)) %>% 
+  na.omit()
+
+join_league <- left_join(join_school, league)
+
+#gender
+gender <- all_leagues %>% 
+  group_by(student_id) %>% 
+  mutate(number = row_number()) %>% 
+  ungroup() %>% 
+  pivot_wider(
+    id_cols = student_id, 
+    names_from = number,
+    values_from = c(gender),
+    names_glue = "{.value}_{number}"
+  ) %>% 
+  select(c(1:3)) %>% 
+  na.omit()
+
+join_gender <- left_join(join_league, gender)
+
+#age
+age <- all_leagues %>% 
+  group_by(student_id) %>% 
+  mutate(number = row_number()) %>% 
+  ungroup() %>% 
+  pivot_wider(
+    id_cols = student_id, 
+    names_from = number,
+    values_from = c(age),
+    names_glue = "{.value}_{number}"
+  ) %>% 
+  select(c(1:3)) %>% 
+  na.omit()
+
+
+join_age <- left_join(join_gender, age)
+
+#sport
+sport <- all_leagues %>% 
+  group_by(student_id) %>% 
+  mutate(number = row_number()) %>% 
+  ungroup() %>% 
+  pivot_wider(
+    id_cols = student_id, 
+    names_from = number,
+    values_from = c(sport),
+    names_glue = "{.value}_{number}"
+  ) %>% 
+  select(c(1:3)) %>% 
+  na.omit()
+
+join_sport <- left_join(join_age, sport)
+
+#level 
+level <- all_leagues %>% 
+  group_by(student_id) %>% 
+  mutate(number = row_number()) %>% 
+  ungroup() %>% 
+  pivot_wider(
+    id_cols = student_id, 
+    names_from = number,
+    values_from = c(level),
+    names_glue = "{.value}_{number}"
+  ) %>% 
+  select(c(1:3)) %>% 
+  na.omit()
+
+join_level <- left_join(join_sport, level)
+
+join_level$onset_1 <- as.Date(join_level$onset_1, format = "%m/%d/%Y")
+join_level$onset_2 <- as.Date(join_level$onset_2, format = "%m/%d/%Y")
+
+#final sims data set
+sims_concussion_first_injury_data <- join_level %>% 
+  select(1, 10, 12, 18, 20, 21, 14, 15, 16, 22, 23, 24, 25, 8, 9, 2, 3, 4, 5, 6, 7) %>% 
+  rename(last_name = last_name_1,
+         first_name = first_name_1,
+         gender = gender_1,
+         league = league_1) %>% 
+  mutate(days_between_injury = onset_2 - onset_1) %>% 
+  filter(days_between_injury >= 0 & days_between_injury <= 365) %>% 
+  filter(age_1 >= 12 & age_1 <= 18,
+         age_2 >= 12 & age_2 <= 18)
+
+sims_concussion_first_injury_le_second_injury <- sims_concussion_first_injury_data %>% 
+  filter(injury_2 == "Ankle Achilles Inflammation" |
+           injury_2 == "Ankle Achilles Tendon Contusion" |
+           injury_2 == "Ankle Achilles Tendon Strain" |
+           injury_2 == "Ankle Achilles Tendon Strain 1 Deg" |
+           injury_2 == "Ankle Anterior Talo-Fibular Sprain" |
+           injury_2 == "Ankle Anterior Talo-Fibular Sprain 1 Deg" |
+           injury_2 == "Ankle Anterior Talo-Fibular Sprain 2 Deg" |
+           injury_2 == "Ankle Anterior Talo-Fibular Sprain 3 Deg" |
+           injury_2 == "Ankle Anterior Tibialis Strain" |
+           injury_2 == "Ankle Anterior Tibio-Fibular Sprain 1 Deg" |
+           injury_2 == "Ankle Anterior Tibio-Fibular Sprain 2 Deg" |
+           injury_2 == "Ankle Calcaneofibular Ligament Sprain" |
+           injury_2 == "Ankle Contusion/Lateral-Posterior Malleolus" |
+           injury_2 == "Ankle Deltoid Ligament Sprain 1 Deg" |
+           injury_2 == "Ankle Dislocation" |
+           injury_2 == "Ankle Fibular Collateral Ligament Sprain 1 Deg" |
+           injury_2 == "Ankle Fracture (non-specific" |
+           injury_2 == "Ankle Lateral Sprain" |
+           injury_2 == "Ankle Lateral Sprain 1 Deg" |
+           injury_2 == "Ankle Lateral Sprain 2 Deg" |
+           injury_2 == "Ankle Lateral Sprain 3 Deg" |
+           injury_2 == "Ankle Medial Sprain" |
+           injury_2 == "Ankle Peroneal Muscle Strain" |
+           injury_2 == "Ankle Peroneal Muscle Strain 3 Deg" |
+           injury_2 == "Ankle Posterior Tibio-Fibular Sprain" |
+           injury_2 == "Ankle Sprain (non-specific)" |
+           injury_2 == "Ankle Sprain 1 Deg (non-specific)" |
+           injury_2 == "Anterior Tibial Stress Syndrome" |
+           injury_2 == "Fibula Achilles Tendon Contusion" |
+           injury_2 == "Fibula Bony Contusion/Distal" |
+           injury_2 == "Fibula Fracture/Distal" |
+           injury_2 == "Fibula Fracture/Non-specific" |
+           injury_2 == "Fibula Gastrocnemius Contusion" |
+           injury_2 == "Fibula Gastrocnemius Cramps" |
+           injury_2 == "Fibula Gastrocnemius Strain 1 Deg" |
+           injury_2 == "Fibula Lower Leg Strain/Posterior" |
+           injury_2 == "Fibula Plantaris Strain 1 Deg" |
+           injury_2 == "Foot 4th Tarsometatarsal Sprain" |
+           injury_2 == "Foot 5th Metatarsal Contusion" |
+           injury_2 == "Foot Arch Sprain/Traumatic 3 Deg" |
+           injury_2 == "Foot Contusion" |
+           injury_2 == "Foot Exterior Digitorum Brevis Strain" |
+           injury_2 == "Foot Fracture/5th Metatarsal/Base" |
+           injury_2 == "Foot Friction Blister" |
+           injury_2 == "Foot Lis-Franc Sprain" |
+           injury_2 == "Foot Metatarsal Contusion" |
+           injury_2 == "Foot Peroneal Tendinitis" |
+           injury_2 == "Foot Plantar Fascitis Chronic" |
+           injury_2 == "Foot Puncture Wound" |
+           injury_2 == "Foot Sprain (non-specific)" |
+           injury_2 == "Great Toe Contusion" |
+           injury_2 == "Great Toe Flexor Hallicus Longus Strain" |
+           injury_2 == "Great Toe Fracture (non-specific)" | 
+           injury_2 == "Great Toe I-P Sprain" |
+           injury_2 == "Great Toe M-P Sprain 1 Deg/Turf Toe" |
+           injury_2 == "Great Toe M-P Sprain/Turf Toe" |
+           injury_2 == "Great Toe Nail Subungual Hematoma" |
+           injury_2 == "Groin Adductor Longus/Proximal 1 Deg" |
+           injury_2 == "Groin Adductor Strain/Proximal" |
+           injury_2 == "Groin Adductor Strain/Proximal 2 Deg" |
+           injury_2 == "Groin Hamstring Strain/Medial Proximal" |
+           injury_2 == "Groin Muscle Strain (non-specific)" |
+           injury_2 == "Groin Pubalgia" |
+           injury_2 == "Heel Fracture/Non-specific" |
+           injury_2 == "Hip Abductor Strain 1 Deg" |
+           injury_2 == "Hip Contusion" |
+           injury_2 == "Hip Flexor Strain" |
+           injury_2 == "Hip Gluteus Maximus Strain" |
+           injury_2 == "Hip Iliopectineal Bursitis" |
+           injury_2 == "Hip Snapping" |
+           injury_2 == "Hip, general trauma" |
+           injury_2 == "Knee Abrasion" |
+           injury_2 == "Knee Anserine Bursitis" |
+           injury_2 == "Knee Anterior Cruciate Sprain" |
+           injury_2 == "Knee Anterior Cruciate Sprain 3 Deg" |
+           injury_2 == "Knee Anterior Inflammation" |
+           injury_2 == "Knee Anterior-Medial Capsule Sprain 1 Deg" |
+           injury_2 == "Knee Bursitis" |
+           injury_2 == "Knee Chondromalacia" | 
+           injury_2 == "Knee Contusion" |
+           injury_2 == "Knee General Stress" |
+           injury_2 == "Knee Hyperextension Sprain" |
+           injury_2 == "Knee Hyperflexion Sprain" |
+           injury_2 == "Knee Ilio-Tibial Band Syndrome (ITBS)" |
+           injury_2 == "Knee Inflammation/Scar Tissue" |
+           injury_2 == "Knee Lateral Capsule Sprain 1 Deg" |
+           injury_2 == "Knee Lateral Collateral Sprain" |
+           injury_2 == "Knee Lateral Collateral Sprain 2 Dg" |
+           injury_2 == "Knee Lateral Hamstring Strain/Distal" |
+           injury_2 == "Knee Medial Capsule Sprain" | 
+           injury_2 == "Knee Medial Collateral Sprain" | 
+           injury_2 == "Knee Medial Collateral Sprain 1 Deg" | 
+           injury_2 == "Knee Medial Collateral Sprain 2 Deg" | 
+           injury_2 == "Knee Medial Hamstrng Strain/Distal" | 
+           injury_2 == "Knee Posterior Cruciate Sprain 3 Dg"| 
+           injury_2 == "Knee Posterior-Medial Capsule Sprain" | 
+           injury_2 == "Knee Quadriceps Strain/Distal 2 Deg" | 
+           injury_2 == "Knee sprain" | 
+           injury_2 == "Knee Sprain (non-specific)" | 
+           injury_2 == "Knee Tibial Plateau Contusion" |
+           injury_2 == "Knee, musculo-skeletal" | 
+           injury_2 == "Meniscus Injury" |
+           injury_2 == "Meniscus Medial Tear" | 
+           injury_2 == "Patella Contusion" | 
+           injury_2 == "Patella Dislocation/Acute - Lateral" | 
+           injury_2 == "Patella Femoral Syndrome" |
+           injury_2 == "Patella Prepatellar Bursa Contusion" |
+           injury_2 == "Patella Subluxation/Acute - Lateral" |
+           injury_2 == "Patella Subluxation/Acute - Medial" |
+           injury_2 == "Patella Tendinitis (Chronic)" | 
+           injury_2 == "Thigh Hamstring Strain/Medial Belly" | 
+           injury_2 == "Thigh Lateral Contusion" | 
+           injury_2 == "Thigh Quads Strain/Belly" | 
+           injury_2 == "Thigh Quads Strain/Belly 1 Deg" | 
+           injury_2 == "Thigh Rectus Femoris Contusion" |
+           injury_2 == "Thigh Rectus Femoris Strain 1 Deg" |
+           injury_2 == "Thigh Vastus Medialis Contusion" |
+           injury_2 == "Tibia Bony Contusion" |
+           injury_2 == "Tibia Bony Contusion Distal" |
+           injury_2 == "Tibia Fracture/Distal/Avulsion" |
+           injury_2 == "Tibia Medial Stress Syndrome" |
+           injury_2 == "Tibia Osgood/Schlatter's Syndrome" |
+           injury_2 == "Tibia Shin Splints" |
+           injury_2 == "Tibia/shin sprain" |
+           injury_2 == "Toe 5th M-P Joint Sprain")
+           
+
+#code above filters partiicpants whose second non-concussion injuries occured within one year of concussion
+
+#when code first ran - total was 1137 individuals
+#filter individuals days_between_injury >= 0 - total reduced to 1107 individuals
+#filter individuals days_between_injury <= 365 - total reduced to 678
+#filter individuals with lower extremity injuries to new data frame - total reduced to 238 individuals
+# total reduced to 233 when age range restricted to 12-18 
+
+#export sims data with no names
+
+sims_data_1 <- sims_concussion_first_injury_data %>% 
+  select(-last_name, -first_name)
+
+sims_data_2 <- sims_concussion_first_injury_le_second_injury %>% 
+  select(-last_name, -first_name)
+
+library(writexl)
+
+write_xlsx(sims_data_1, "sims_data_1.xlsx")
+
+write_xlsx(sims_data_2, "sims_data_2.xlsx")
+
+
+```
+
+```{r, include=FALSE}
+#loading up impact data to match post-injury 1 IMPACT scores
+
+files <- dir_ls(here::here("data"), glob = "*.csv")
+
+d <- map_df(files, read_csv, .id = "file",
+                 col_types = cols(.default = "c")) %>% 
+  modify(~parse_guess(.x)) %>% 
+  janitor::clean_names() %>% 
+  mutate(year = parse_number(file)) %>% 
+  mutate(year = as.factor(year))
+
+d <- d %>% 
+  mutate(first_name = str_to_title(first_name),
+         last_name = str_to_title(last_name))
+
+impact_variables <- d %>% 
+  select(passport_id,
+         first_name, 
+         last_name, 
+         test_type,
+         test_date,
+         user_memory_composite_score_verbal,
+         user_memory_composite_score_visual,
+         user_visual_motor_composite_score,
+         user_impulse_control_composite_score,
+         user_reaction_time_composite_score) %>% 
+  rename(verbal_memory = user_memory_composite_score_verbal,
+         visual_memory = user_memory_composite_score_visual,
+         visual_motor = user_visual_motor_composite_score,
+         impulse_control = user_impulse_control_composite_score,
+         reaction_time = user_reaction_time_composite_score) %>% 
+  filter(test_type == "Post-Injury 1")
+
+str(impact_variables)
+
+impact_variables %>% 
+  count(passport_id)
+
+impact_variables$test_date <- as.Date(impact_variables$test_date, format = "%m/%d/%Y")
+
+sims_impact_data <- left_join(sims_concussion_first_injury_data, impact_variables) %>% 
+  na.omit() %>% 
+  select(-passport_id, -test_type) %>% 
+  mutate(days_between_injury_test_date = test_date - onset_1) %>% 
+  filter(days_between_injury_test_date >= 0 & days_between_injury_test_date <= 100)
+
+#when data sets first joined, there were 907 total observations - 229 than sims only data set. 
+#missing values removed leaving data set with 458 observations
+#days between injury 1 onset date filtered to be greater than or equal to 0 days and less than or equal to 100 days leaving 328 observations 
+
+sims_impact_data <- sims_impact_data %>% 
+  select(c(1:23, 29, 24:28))
+
+sims_impact_data_all_injuries <- sims_impact_data %>% 
+  select(-last_name, -first_name)
+
+write_xlsx(sims_impact_data_all_injuries,"sims_impact_data_all_injuries.xlsx")
+
+sims_impact_data_le_injury_only <- left_join(sims_concussion_first_injury_le_second_injury,
+                                             impact_variables) %>% 
+  na.omit() %>% 
+  select(-passport_id, -test_type) %>% 
+  mutate(days_between_injury_test_date = test_date - onset_1) %>% 
+  filter(days_between_injury_test_date >= 0 & days_between_injury_test_date <= 100)
+
+write_xlsx(sims_impact_data_le_injury_only, "sims_impact_data_le_injury_only.xlsx")
+
+#with lower injuries only, combined with impact, there are 106 observations - ages filtered to be 12-18
+
+  
+```
+
+# Data Background {.tabset .tabset-fade .tabset-pills}
+
+Tables display data from sample 238 individuals from Sims data set that sustained a lower extremity injury within 1 year of sustaining a concussion. To include more data, the information below does not contain information from the merged IMPACT data sample. 
+
+## Gender 
+
+```{r, include=TRUE}
+gender_total_tbl <- sims_concussion_first_injury_le_second_injury %>% 
+  group_by(gender) %>% 
+  summarize(total = n()) %>% 
+  reactable(
+    columns = list(
+      gender = colDef(name = "Gender"),
+      total = colDef(name = "Total")),
+    pagination = TRUE,
+    striped = TRUE,
+    outlined = TRUE,
+    compact = TRUE,
+    highlight = TRUE,
+    bordered = TRUE
+  )
+
+```
+
+```{r, include=TRUE}
+gender_total_tbl
+```
+
+# Second Injury Frequency 
+
+Table reflects 238 individuals from Sims data set with a diagnosed lower extremity injury following a concussion. 
+
+```{r, include=FALSE}
+head(sims_concussion_first_injury_le_second_injury)
+
+sims_concussion_first_injury_le_second_injury %>% 
+  count(injury_2)
+
+injury_2_tbl <- sims_concussion_first_injury_le_second_injury %>% 
+  group_by(injury_2) %>% 
+  summarize(total = n()) %>% 
+  reactable(
+    columns = list(
+      injury_2 = colDef(name = "Injury"),
+      total = colDef(name = "Total")),
+    pagination = TRUE,
+    striped = TRUE,
+    outlined = TRUE,
+    compact = TRUE,
+    highlight = TRUE,
+    bordered = TRUE,
+    searchable = TRUE
+  )
+
+```
+
+```{r, include=TRUE}
+injury_2_tbl
+```
+
+# Duration of Time Between Concussion and Lower Extremity Injury {.tabset .tabset-fade .tabset-pills}
+
+```{r, include=FALSE}
+gender_time_between_tbl <- sims_concussion_first_injury_le_second_injury %>% 
+  group_by(gender) %>% 
+  summarize(mean = mean(days_between_injury)) %>% 
+  filter(gender == "F" |
+         gender == "M") %>% 
+  mutate(mean = as.numeric(mean)) %>% 
+  reactable(
+    columns = list(
+      gender = colDef(name = "Gender"),
+      mean = colDef(name = "Mean",
+                    format = colFormat(digits = 2, separators = TRUE, suffix = " days"))),
+    pagination = TRUE,
+    striped = TRUE,
+    outlined = TRUE,
+    compact = TRUE,
+    highlight = TRUE,
+    bordered = TRUE
+  )
+  
+
+```
+
+## Gender 
+
+Mean number of days between injuries for females and males 
+
+```{r, include=TRUE}
+gender_time_between_tbl
 ```
