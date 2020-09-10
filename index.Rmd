@@ -645,6 +645,126 @@ gender_total_tbl <- sims_concussion_first_injury_le_second_injury %>%
 gender_total_tbl
 ```
 
+## Age at Concussion
+
+```{r, include=FALSE}
+concussion_age_total_tbl <- sims_concussion_first_injury_le_second_injury %>% 
+  group_by(age_1) %>% 
+  summarize(total = n()) %>% 
+  reactable(
+    columns = list(
+      age_1 = colDef(name = "Age"),
+      total = colDef(name = "Total")),
+    pagination = TRUE,
+    striped = TRUE,
+    outlined = TRUE,
+    compact = TRUE,
+    highlight = TRUE,
+    bordered = TRUE
+  )
+
+
+```
+
+```{r, include=TRUE}
+concussion_age_total_tbl
+```
+
+## Age at Second Injury
+
+```{r, include=FALSE}
+second_age_total_tbl <- sims_concussion_first_injury_le_second_injury %>% 
+  group_by(age_2) %>% 
+  summarize(total = n()) %>% 
+  reactable(
+    columns = list(
+      age_2 = colDef(name = "Age"),
+      total = colDef(name = "Total")),
+    pagination = TRUE,
+    striped = TRUE,
+    outlined = TRUE,
+    compact = TRUE,
+    highlight = TRUE,
+    bordered = TRUE
+  )
+
+
+```
+
+```{r, include=TRUE}
+second_age_total_tbl
+```
+
+## League
+
+```{r, include=FALSE}
+league_total_tbl <- sims_concussion_first_injury_le_second_injury %>% 
+  group_by(league) %>% 
+  summarize(total = n()) %>% 
+  reactable(
+    columns = list(
+      league = colDef(name = "Age"),
+      total = colDef(name = "Total")),
+    pagination = TRUE,
+    striped = TRUE,
+    outlined = TRUE,
+    compact = TRUE,
+    highlight = TRUE,
+    bordered = TRUE
+  )
+```
+
+```{r, include=TRUE}
+league_total_tbl
+```
+
+## Sport Played Concussion Injury 
+
+```{r, include=FALSE}
+sport_1_total_tbl <- sims_concussion_first_injury_le_second_injury %>% 
+  group_by(sport_1) %>% 
+  summarize(total = n()) %>% 
+  reactable(
+    columns = list(
+      sport_1 = colDef(name = "Age"),
+      total = colDef(name = "Total")),
+    pagination = TRUE,
+    striped = TRUE,
+    outlined = TRUE,
+    compact = TRUE,
+    highlight = TRUE,
+    bordered = TRUE
+  )
+```
+
+```{r, include=TRUE}
+sport_1_total_tbl
+```
+
+## Sport Played Lower Extremity Injury 
+
+```{r, include=FALSE}
+sport_2_total_tbl <- sims_concussion_first_injury_le_second_injury %>% 
+  group_by(sport_2) %>% 
+  summarize(total = n()) %>% 
+  reactable(
+    columns = list(
+      sport_2 = colDef(name = "Age"),
+      total = colDef(name = "Total")),
+    pagination = TRUE,
+    striped = TRUE,
+    outlined = TRUE,
+    compact = TRUE,
+    highlight = TRUE,
+    bordered = TRUE
+  )
+```
+
+```{r, include=TRUE}
+sport_2_total_tbl
+```
+
+
 # Second Injury Frequency 
 
 Table reflects 238 individuals from Sims data set with a diagnosed lower extremity injury following a concussion. 
@@ -682,15 +802,31 @@ injury_2_tbl
 ```{r, include=FALSE}
 gender_time_between_tbl <- sims_concussion_first_injury_le_second_injury %>% 
   group_by(gender) %>% 
-  summarize(mean = mean(days_between_injury)) %>% 
+  summarize(mean = mean(days_between_injury),
+            sd = sd(days_between_injury),
+            min = min(days_between_injury),
+            max = max(days_between_injury),
+            total = length(days_between_injury)) %>%
   filter(gender == "F" |
          gender == "M") %>% 
-  mutate(mean = as.numeric(mean)) %>% 
+  mutate(mean = as.numeric(mean),
+         sd = as.numeric(sd),
+         min = as.numeric(min),
+         max = as.numeric(max),
+         total = as.numeric(total)) %>% 
   reactable(
     columns = list(
       gender = colDef(name = "Gender"),
       mean = colDef(name = "Mean",
-                    format = colFormat(digits = 2, separators = TRUE, suffix = " days"))),
+                    format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      sd = colDef(name = "SD",
+                  format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      min = colDef(name = "Min",
+                   format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      max = colDef(name = "Max",
+                   format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      total = colDef(name = "Total",
+                   format = colFormat(digits = 2, separators = TRUE, suffix = " individuals"))),
     pagination = TRUE,
     striped = TRUE,
     outlined = TRUE,
@@ -698,14 +834,52 @@ gender_time_between_tbl <- sims_concussion_first_injury_le_second_injury %>%
     highlight = TRUE,
     bordered = TRUE
   )
-  
+
 
 ```
 
-## Gender 
+## Gender {.tabset .tabset-fade .tabset-pills}
 
-Mean number of days between injuries for females and males 
+### Summary Table
+
+Descriptive statistics of time between concussion and lower extremity injury by gender
 
 ```{r, include=TRUE}
 gender_time_between_tbl
+```
+
+### Box Plot
+
+```{r, include=FALSE}
+gender_tee <- sims_concussion_first_injury_le_second_injury %>% 
+  filter(gender == "F" |
+           gender == "M")
+
+bxp <- ggboxplot(
+  gender_tee, x = "gender", y = "days_between_injury", 
+  ylab = "Number of Days", xlab = "Gender", add = "jitter",
+  title = "Days Between Injuries"
+  )
+bxp
+```
+
+```{r, include=TRUE}
+bxp
+```
+
+### *T*-Test Results
+
+```{r, include=FALSE}
+gender_tee <- gender_tee %>% 
+  mutate(days_between_injury = as.numeric(days_between_injury))
+
+gender_tee_results <- gender_tee %>% 
+  t_test(days_between_injury ~ gender) %>% 
+  add_significance()
+
+gender_tee_results
+```
+
+```{r, include=TRUE}
+gender_tee_results 
 ```
