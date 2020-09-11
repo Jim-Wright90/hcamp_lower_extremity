@@ -128,7 +128,9 @@ all_leagues$gender
 all_leagues <- all_leagues %>% 
   mutate(gender = recode(gender,
                          `F` = "Female",
-                         `M` = "Male"))
+                         `M` = "Male"),
+         level = recode(level,
+                        `JV` = "Junior Varsity"))
 
 
 all_leagues %>% 
@@ -943,11 +945,21 @@ bxp <- ggboxplot(
 
 bxp +
   stat_compare_means(method = "t.test", hjust = -0.2)
+
+
+gender_bxp <- ggplot(gender_tee, aes(gender, days_between_injury, color = gender)) +
+  geom_boxplot() +
+  geom_jitter(position = position_jitter(0.2)) +
+  scale_color_OkabeIto() +
+  theme(legend.position = "none") +
+  labs(x = "",
+       y = "Number of Days",
+       title = "Days Between Injuries") +
+  stat_compare_means(method = "t.test", hjust = -0.2)
 ```
 
 ```{r, include=TRUE}
-bxp +
-  stat_compare_means(method = "t.test", hjust = -0.2)
+gender_bxp
 ```
 
 ### *T*-Test Results
@@ -1190,11 +1202,23 @@ sport_bxp <- ggboxplot(
 
 sport_bxp +
   stat_compare_means(method = "t.test", hjust = -0.2)
+
+
+sport_bxp_2 <- ggplot(sport_tee, aes(sport_2, days_between_injury, color = sport_2)) +
+  geom_boxplot() +
+  geom_jitter(position = position_jitter(0.2)) +
+  scale_color_OkabeIto() +
+  theme(legend.position = "none") +
+  labs(x = "",
+       y = "Number of Days",
+       title = "Days Between Injuries",
+       caption = "Sport at time of 2nd injury") +
+  stat_compare_means(method = "t.test", hjust = -0.2)
+
 ```
 
 ```{r, include=TRUE}
-sport_bxp +
-  stat_compare_means(method = "t.test", hjust = -0.2)
+sport_bxp_2
 ```
 
 ### *T*-Test Results
@@ -1274,10 +1298,21 @@ sch_plot <- ggboxplot(school_analysis, x = "school_2", y = "days_between_injury"
           order = c("Maui High School", "Kalaheo High School", "Mililani High School"),
           ylab = "Number of Days", xlab = "", add = "jitter")
 
+
+sch_bxp <- ggplot(school_analysis, aes(school_2, days_between_injury, color = school_2)) +
+  geom_boxplot() +
+  geom_jitter(position = position_jitter(0.2)) +
+  scale_color_OkabeIto() +
+  theme(legend.position = "none") +
+  labs(x = "",
+       y = "Number of Days",
+       title = "Days Between Injuries") +
+  stat_compare_means(method = "anova", hjust = -0.2)
+
 ```
 
 ```{r, include=TRUE}
-sch_plot
+sch_bxp
 ```
 
 ### Anova 
@@ -1292,5 +1327,92 @@ summary(school_res_aov)
 
 ```{r, include=TRUE}
 summary(school_res_aov)
+```
 
+## Level {.tabset .tabset-fade .tabset-pills}
+
+Schools with 20 or more individuals included. 
+
+### Descriptive Statistics 
+
+Table displayed statistics of the number of days between injuries for the sport level at the time of the individuals' lower extremity injury. 
+
+```{r, include=FALSE}
+level_analysis <- sims_concussion_first_injury_le_second_injury %>% 
+  filter(level_2 == "JV" |
+         level_2 == "Varsity") %>% 
+  mutate(days_between_injury = as.numeric(days_between_injury))
+
+
+level_tbl <- level_analysis %>% 
+  group_by(level_2) %>% 
+  summarize(mean = mean(days_between_injury),
+            sd = sd(days_between_injury),
+            min = min(days_between_injury),
+            max = max(days_between_injury),
+            total = length(days_between_injury)) %>% 
+  reactable(
+    columns = list(
+      level_2 = colDef(name = "Level"),
+      mean = colDef(name = "Mean",
+                    format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      sd = colDef(name = "SD",
+                  format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      min = colDef(name = "Min",
+                   format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      max = colDef(name = "Max",
+                   format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      total = colDef(name = "Total",
+                   format = colFormat(digits = 2, separators = TRUE, suffix = " individuals"))),
+    pagination = TRUE,
+    striped = TRUE,
+    outlined = TRUE,
+    compact = TRUE,
+    highlight = TRUE,
+    bordered = TRUE
+  )
+```
+
+```{r, include=TRUE}
+level_tbl
+```
+
+### Box Plot
+
+```{r, include=FALSE}
+level_tee <- sims_concussion_first_injury_le_second_injury %>% 
+  filter(level_1 == "Junior Varsity" | level_1 == "Varsity",
+         level_2 == "Junior Varsity" | level_2 == "Varsity") %>% 
+  mutate(days_between_injury = as.numeric(days_between_injury))
+
+
+level_bxp <- ggplot(level_tee, aes(level_2, days_between_injury, color = level_2)) +
+  geom_boxplot() +
+  geom_jitter(position = position_jitter(0.2)) +
+  scale_color_OkabeIto() +
+  labs(x = "",
+       y = "Number of Days",
+       title = "Days Between Injuries",
+       caption = "Level at time of 2nd injury") +
+  theme(legend.position = "none") +
+  stat_compare_means(method = "t.test", hjust = -0.2)
+
+```
+
+```{r, include=TRUE}
+level_bxp
+```
+
+### *T*-Test Results
+
+Individuals playing varsity sports at the time of second injury have a significantly different longer duration of time between injuries. 
+
+```{r, include=FALSE}
+level_tee_results <- level_tee %>% 
+  t_test(days_between_injury ~ level_2) %>% 
+  add_significance()
+```
+
+```{r, include=TRUE}
+level_tee_results 
 ```
