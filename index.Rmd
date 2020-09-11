@@ -77,6 +77,13 @@ mean_2 <- function(x) {
   sum(z) / length(z)
 }
 
+my_mean <- function(x) {
+  mean(x[x >= 0], na.rm = TRUE)
+}
+
+mean_2(all_leagues$days_missed)
+my_mean(all_leagues$days_missed)
+
 
 #demo code from Daniel 
 
@@ -1329,6 +1336,15 @@ summary(school_res_aov)
 summary(school_res_aov)
 ```
 
+### Pairwise Comparisons 
+
+```{r, include=TRUE}
+pairwise.t.test(school_analysis$days_between_injury,
+                school_analysis$school_2,
+                p.adjust.method = "bonferroni")
+```
+
+
 ## Level {.tabset .tabset-fade .tabset-pills}
 
 Schools with 20 or more individuals included. 
@@ -1415,4 +1431,288 @@ level_tee_results <- level_tee %>%
 
 ```{r, include=TRUE}
 level_tee_results 
+```
+
+# Days Missed Following Injuries {.tabset .tabset-fade .tabset-pills}
+
+One individual removed from sample because of missing information for days since both injuries reducing sample total to 232 individauls. The number of days missed post-concussion appears to have severe outliers? 
+
+```{r, include=FALSE}
+
+days_missed_data <- sims_concussion_first_injury_le_second_injury %>% 
+  rename(days_missed_concussion = days_missed_1,
+         days_missed_lower_extremity = days_missed_2) %>% 
+  drop_na(days_missed_concussion) %>% 
+  drop_na(days_missed_lower_extremity)
+
+
+days_missed_long <- days_missed_data %>% 
+  pivot_longer(
+    cols = c(20:21),
+    names_to = "injury",
+    names_prefix = "days_missed_",
+    values_to = "days_missed"
+  ) %>% 
+  mutate(injury = recode(injury,
+                         `lower_extremity` = "lower extremity")) %>% 
+  drop_na(days_missed)
+
+days_missed_concussion <- days_missed_data %>% 
+  group_by(injury_1) %>% 
+  summarize(mean = mean(days_missed_concussion),
+            sd = sd(days_missed_concussion),
+            min = min(days_missed_concussion),
+            max = max(days_missed_concussion),
+            total = length(days_missed_concussion)) %>% 
+  reactable(
+    columns = list(
+      injury_1 = colDef(name = "Injury"),
+      mean = colDef(name = "Mean",
+                    format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      sd = colDef(name = "SD",
+                  format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      min = colDef(name = "Min",
+                   format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      max = colDef(name = "Max",
+                   format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      total = colDef(name = "Total",
+                   format = colFormat(digits = 2, separators = TRUE, suffix = " individuals"))),
+    pagination = TRUE,
+    striped = TRUE,
+    outlined = TRUE,
+    compact = TRUE,
+    highlight = TRUE,
+    bordered = TRUE      
+    )
+
+days_missed_le <- days_missed_data %>% 
+  group_by(injury_2) %>% 
+  summarize(mean = mean(days_missed_lower_extremity),
+            sd = sd(days_missed_lower_extremity),
+            min = min(days_missed_lower_extremity),
+            max = max(days_missed_lower_extremity),
+            total = length(days_missed_lower_extremity)) %>% 
+  arrange(desc(total)) %>% 
+  reactable(
+    columns = list(
+      injury_2 = colDef(name = "Injury"),
+      mean = colDef(name = "Mean",
+                    format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      sd = colDef(name = "SD",
+                  format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      min = colDef(name = "Min",
+                   format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      max = colDef(name = "Max",
+                   format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      total = colDef(name = "Total",
+                   format = colFormat(digits = 2, separators = TRUE, suffix = " individuals"))),
+    pagination = TRUE,
+    striped = TRUE,
+    outlined = TRUE,
+    compact = TRUE,
+    highlight = TRUE,
+    bordered = TRUE      
+    )
+```
+
+## Descriptive Statistics {.tabset .tabset-fade .tabset-pills}
+
+### Days Missed Following Concussion
+
+```{r, include=TRUE}
+days_missed_concussion
+```
+
+### Days Missed Following Lower Extremity Injury 
+
+```{r, include=TRUE}
+days_missed_le
+```
+
+## *T*-Test Across Entire Sample {.tabset .tabset-fade .tabset-pills}
+
+```{r, include=FALSE}
+head(days_missed_long)
+
+days_missed_bxp <- ggplot(days_missed_long, aes(injury, days_missed, color = injury)) +
+  geom_boxplot() +
+  geom_jitter(position = position_jitter(0.2)) +
+  scale_color_OkabeIto() +
+  labs(x = "",
+       y = "Number of Days",
+       title = "Days Missed Following Injury") +
+  theme(legend.position = "none") +
+  stat_compare_means(method = "t.test", hjust = -0.2)
+
+days_missed_1 <- days_missed_data$days_missed_concussion
+days_missed_2 <- days_missed_data$days_missed_lower_extremity
+
+days_missed_res <- t.test(days_missed_1, days_missed_2, paired = TRUE)
+
+days_missed_res
+
+days_missed_res$p.value
+days_missed_res$estimate
+days_missed_res$statistic
+
+```
+
+### Boxplot
+
+```{r, include=TRUE}
+days_missed_bxp
+```
+
+### Results
+
+```{r, include=TRUE}
+days_missed_res
+```
+
+## Gender {.tabset .tabset-fade .tabset-pills}
+
+### Days Missed Following Concussion
+
+```{r, include=FALSE}
+
+gender_days_missed_concussion <- days_missed_data %>% 
+  group_by(gender) %>% 
+  summarize(mean = mean(days_missed_concussion),
+            sd = sd(days_missed_concussion),
+            min = min(days_missed_concussion),
+            max = max(days_missed_concussion),
+            total = length(days_missed_concussion)) %>% 
+  reactable(
+    columns = list(
+      gender = colDef(name = "Gender"),
+      mean = colDef(name = "Mean",
+                    format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      sd = colDef(name = "SD",
+                  format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      min = colDef(name = "Min",
+                   format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      max = colDef(name = "Max",
+                   format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      total = colDef(name = "Total",
+                   format = colFormat(digits = 2, separators = TRUE, suffix = " individuals"))),
+    pagination = TRUE,
+    striped = TRUE,
+    outlined = TRUE,
+    compact = TRUE,
+    highlight = TRUE,
+    bordered = TRUE      
+    )
+```
+
+```{r, include=TRUE}
+gender_days_missed_concussion
+```
+
+### Days Missed Following Lower Extremity Injury
+
+```{r, include=FALSE}
+
+gender_days_missed_le <- days_missed_data %>% 
+  group_by(gender) %>% 
+  summarize(mean = mean(days_missed_lower_extremity),
+            sd = sd(days_missed_lower_extremity),
+            min = min(days_missed_lower_extremity),
+            max = max(days_missed_lower_extremity),
+            total = length(days_missed_lower_extremity)) %>% 
+  reactable(
+    columns = list(
+      gender = colDef(name = "Gender"),
+      mean = colDef(name = "Mean",
+                    format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      sd = colDef(name = "SD",
+                  format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      min = colDef(name = "Min",
+                   format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      max = colDef(name = "Max",
+                   format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      total = colDef(name = "Total",
+                   format = colFormat(digits = 2, separators = TRUE, suffix = " individuals"))),
+    pagination = TRUE,
+    striped = TRUE,
+    outlined = TRUE,
+    compact = TRUE,
+    highlight = TRUE,
+    bordered = TRUE      
+    )
+```
+
+```{r, include=TRUE}
+gender_days_missed_le
+```
+
+### Concussion Box Plot 
+
+```{r, include=FALSE}
+
+gender_concussion_days_missed_tee <- days_missed_data %>% 
+  filter(gender == "Female" |
+           gender == "Male")
+
+
+gender_days_missed_concussion_bxp <- ggplot(gender_concussion_days_missed_tee, aes(gender, days_missed_concussion, color = gender)) +
+  geom_boxplot() +
+  geom_jitter(position = position_jitter(0.2)) +
+  scale_color_OkabeIto() +
+  theme(legend.position = "none") +
+  labs(x = "",
+       y = "Number of Days",
+       title = "Days Missed Following Concussion") +
+  stat_compare_means(method = "t.test", hjust = -0.2)
+```
+
+```{r, include=TRUE}
+gender_days_missed_concussion_bxp
+```
+
+### Concussion *T*-Test Results
+
+```{r, include=FALSE}
+gender_days_missed_concussion_tee_results <- gender_concussion_days_missed_tee %>% 
+  t_test(days_missed_concussion ~ gender) %>% 
+  add_significance()
+```
+
+```{r, include=TRUE}
+gender_days_missed_concussion_tee_results
+```
+
+### Lower Extremity Box Plot 
+
+```{r, include=FALSE}
+
+gender_le_days_missed_tee <- days_missed_data %>% 
+  filter(gender == "Female" |
+           gender == "Male")
+
+
+gender_days_missed_le_bxp <- ggplot(gender_le_days_missed_tee, aes(gender, days_missed_lower_extremity, color = gender)) +
+  geom_boxplot() +
+  geom_jitter(position = position_jitter(0.2)) +
+  scale_color_OkabeIto() +
+  theme(legend.position = "none") +
+  labs(x = "",
+       y = "Number of Days",
+       title = "Days Missed Following Lower Extremity Injury") +
+  stat_compare_means(method = "t.test", hjust = -0.2)
+```
+
+```{r, include=TRUE}
+gender_days_missed_le_bxp
+```
+
+### Concussion *T*-Test Results
+
+```{r, include=FALSE}
+gender_days_missed_le_tee_results <- gender_le_days_missed_tee %>% 
+  t_test(days_missed_lower_extremity ~ gender) %>% 
+  add_significance()
+```
+
+```{r, include=TRUE}
+gender_days_missed_le_tee_results
 ```
