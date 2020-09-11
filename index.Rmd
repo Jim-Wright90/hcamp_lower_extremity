@@ -123,6 +123,14 @@ create_react <- function(df, var) {
 ```
 
 ```{r, include=FALSE}
+all_leagues$gender
+
+all_leagues <- all_leagues %>% 
+  mutate(gender = recode(gender,
+                         `F` = "Female",
+                         `M` = "Male"))
+
+
 all_leagues %>% 
   count(injury)
 
@@ -703,7 +711,7 @@ league_total_tbl <- sims_concussion_first_injury_le_second_injury %>%
   summarize(total = n()) %>% 
   reactable(
     columns = list(
-      league = colDef(name = "Age"),
+      league = colDef(name = "League"),
       total = colDef(name = "Total")),
     pagination = TRUE,
     striped = TRUE,
@@ -718,15 +726,41 @@ league_total_tbl <- sims_concussion_first_injury_le_second_injury %>%
 league_total_tbl
 ```
 
+## School 
+
+```{r, include=FALSE}
+school_total_tbl <- sims_concussion_first_injury_le_second_injury %>% 
+  group_by(league, school_2) %>% 
+  summarize(total = n()) %>% 
+  arrange(desc(total)) %>% 
+  reactable(
+    columns = list(
+      league = colDef(name = "League"),
+      school_2 = colDef(name = "School"),
+      total = colDef(name = "Total")),
+    pagination = TRUE,
+    striped = TRUE,
+    outlined = TRUE,
+    compact = TRUE,
+    highlight = TRUE,
+    bordered = TRUE
+  )
+```
+
+```{r, include=TRUE}
+school_total_tbl
+```
+
 ## Sport Played Concussion Injury 
 
 ```{r, include=FALSE}
 sport_1_total_tbl <- sims_concussion_first_injury_le_second_injury %>% 
   group_by(sport_1) %>% 
   summarize(total = n()) %>% 
+  arrange(desc(total)) %>% 
   reactable(
     columns = list(
-      sport_1 = colDef(name = "Age"),
+      sport_1 = colDef(name = "Sport"),
       total = colDef(name = "Total")),
     pagination = TRUE,
     striped = TRUE,
@@ -741,15 +775,39 @@ sport_1_total_tbl <- sims_concussion_first_injury_le_second_injury %>%
 sport_1_total_tbl
 ```
 
+## Sport Level Concussion Injury 
+
+```{r, include=FALSE}
+level_1_total_tbl <- sims_concussion_first_injury_le_second_injury %>% 
+  group_by(level_1) %>% 
+  summarize(total = n()) %>% 
+  reactable(
+    columns = list(
+      level_1 = colDef(name = "Level"),
+      total = colDef(name = "Total")),
+    pagination = TRUE,
+    striped = TRUE,
+    outlined = TRUE,
+    compact = TRUE,
+    highlight = TRUE,
+    bordered = TRUE
+  )
+```
+
+```{r, include=TRUE}
+level_1_total_tbl
+```
+
 ## Sport Played Lower Extremity Injury 
 
 ```{r, include=FALSE}
 sport_2_total_tbl <- sims_concussion_first_injury_le_second_injury %>% 
   group_by(sport_2) %>% 
   summarize(total = n()) %>% 
+  arrange(desc(total)) %>% 
   reactable(
     columns = list(
-      sport_2 = colDef(name = "Age"),
+      sport_2 = colDef(name = "Sport"),
       total = colDef(name = "Total")),
     pagination = TRUE,
     striped = TRUE,
@@ -764,6 +822,28 @@ sport_2_total_tbl <- sims_concussion_first_injury_le_second_injury %>%
 sport_2_total_tbl
 ```
 
+## Sport Level Lower Extremity Injury 
+
+```{r, include=FALSE}
+level_2_total_tbl <- sims_concussion_first_injury_le_second_injury %>% 
+  group_by(level_2) %>% 
+  summarize(total = n()) %>% 
+  reactable(
+    columns = list(
+      level_2 = colDef(name = "Level"),
+      total = colDef(name = "Total")),
+    pagination = TRUE,
+    striped = TRUE,
+    outlined = TRUE,
+    compact = TRUE,
+    highlight = TRUE,
+    bordered = TRUE
+  )
+```
+
+```{r, include=TRUE}
+level_2_total_tbl
+```
 
 # Second Injury Frequency 
 
@@ -807,8 +887,8 @@ gender_time_between_tbl <- sims_concussion_first_injury_le_second_injury %>%
             min = min(days_between_injury),
             max = max(days_between_injury),
             total = length(days_between_injury)) %>%
-  filter(gender == "F" |
-         gender == "M") %>% 
+  filter(gender == "Female" |
+         gender == "Male") %>% 
   mutate(mean = as.numeric(mean),
          sd = as.numeric(sd),
          min = as.numeric(min),
@@ -852,19 +932,22 @@ gender_time_between_tbl
 
 ```{r, include=FALSE}
 gender_tee <- sims_concussion_first_injury_le_second_injury %>% 
-  filter(gender == "F" |
-           gender == "M")
+  filter(gender == "Female" |
+           gender == "Male")
 
 bxp <- ggboxplot(
   gender_tee, x = "gender", y = "days_between_injury", 
   ylab = "Number of Days", xlab = "Gender", add = "jitter",
   title = "Days Between Injuries"
   )
-bxp
+
+bxp +
+  stat_compare_means(method = "t.test", hjust = -0.2)
 ```
 
 ```{r, include=TRUE}
-bxp
+bxp +
+  stat_compare_means(method = "t.test", hjust = -0.2)
 ```
 
 ### *T*-Test Results
@@ -882,4 +965,332 @@ gender_tee_results
 
 ```{r, include=TRUE}
 gender_tee_results 
+```
+
+## Age {.tabset .tabset-fade .tabset-pills}
+
+### Age Difference Distribution
+
+To create plot, a new variable was created `age_difference` calculated as the difference between injury_2 age and injury_1 age. All differences are less than one year. The distribution is not normal with higher distribution at both tails. 
+
+```{r, include=FALSE}
+age_diff <- sims_concussion_first_injury_le_second_injury %>% 
+  mutate(age_difference = age_2 - age_1)
+
+hist(age_diff$age_difference)
+
+age_diff_plot <- ggplot(age_diff, aes(age_difference)) +
+  geom_histogram(fill = "#56B4E9",
+                color = "white", 
+                alpha = 0.9,
+                bins = 25) +
+  labs(x = "Age Difference (Years)",
+       y = "Number of Individuals",
+       title = "Age Difference in Years between Two Injuries",
+       caption = "All injuries less than one year apart")
+```
+
+```{r, include=TRUE}
+age_diff_plot
+```
+
+### Age 1 Total Distribution
+
+```{r, include=TRUE}
+ggplot(age_diff, aes(age_1)) +
+  geom_histogram(fill = "#56B4E9",
+                color = "white", 
+                alpha = 0.9,
+                bins = 50) +
+  labs(x = "Age",
+       y = "Number of Individuals",
+       title = "Age at First Injury")
+
+```
+
+### Age 1 Distribution League
+
+```{r, include=TRUE}
+ggplot(age_diff, aes(age_1)) +
+  geom_histogram(fill = "#56B4E9",
+                color = "white", 
+                alpha = 0.9,
+                bins = 25) +
+  facet_wrap(~league) +
+  labs(x = "Age",
+       y = "Number of Individuals",
+       title = "Age at First Injury")
+```
+
+### Age 1 Distribution Gender
+
+```{r, include=TRUE}
+ggplot(age_diff, aes(age_1)) +
+  geom_histogram(fill = "#56B4E9",
+                color = "white", 
+                alpha = 0.9,
+                bins = 10) +
+  facet_wrap(~gender) +
+  labs(x = "Age",
+       y = "Number of Individuals",
+       title = "Age at First Injury")
+```
+
+
+### Age 2 Total Distribution
+
+```{r, include=TRUE}
+ggplot(age_diff, aes(age_2)) +
+  geom_histogram(fill = "#56B4E9",
+                color = "white", 
+                alpha = 0.9,
+                bins = 50) +
+  labs(x = "Age",
+       y = "Number of Individuals",
+       title = "Age at Second Injury")
+
+```
+
+### Age 2 Distribution League
+
+```{r, include=TRUE}
+ggplot(age_diff, aes(age_2)) +
+  geom_histogram(fill = "#56B4E9",
+                color = "white", 
+                alpha = 0.9,
+                bins = 25) +
+  facet_wrap(~league) +
+  labs(x = "Age",
+       y = "Number of Individuals",
+       title = "Age at Second Injury")
+```
+
+### Age 2 Distribution Gender
+
+```{r, include=TRUE}
+ggplot(age_diff, aes(age_2)) +
+  geom_histogram(fill = "#56B4E9",
+                color = "white", 
+                alpha = 0.9,
+                bins = 10) +
+  facet_wrap(~gender) +
+  labs(x = "Age",
+       y = "Number of Individuals",
+       title = "Age at Second Injury")
+```
+
+```{r, include=FALSE}
+age_diff <- age_diff %>% 
+  mutate(days_between_injury = as.numeric(days_between_injury))
+
+age_diff_mod <- lm(days_between_injury ~ age_2, data = age_diff)
+
+summary(age_diff_mod)
+```
+
+### Age Model 
+
+To produce the model, I calculated the relationship between the age at second injury and the days between injuries. There appears to be a significant relationship, although the model only accounts for 5% of the variance. Overall, there is a 31.339 unit increase in the days between injury for every unit increase in the age at time of 2nd injury. 
+
+```{r, include=TRUE}
+summary(age_diff_mod)
+```
+
+## Sport {.tabset .tabset-fade .tabset-pills}
+
+This section primarily explores the time between injuries for Football and Women's Soccer as those are the two most common sports at time of concussion and lower extremity injury. 
+
+### Descriptive Statistics
+
+Table displayed statistics of the number of days between injuries for individuals who sustained their injuries playing football or women's soccer.
+
+```{r, include=FALSE}
+sport_time_between <- sims_concussion_first_injury_le_second_injury %>% 
+  filter(sport_1 == "Football" | sport_1 == "Women's Soccer",
+         sport_2 == "Football" | sport_2 == "Women's Soccer") %>% 
+  mutate(days_between_injury = as.numeric(days_between_injury))
+
+spt_tbl <- sport_time_between %>% 
+  group_by(sport_1, sport_2) %>% 
+  summarize(mean = mean(days_between_injury),
+            sd = sd(days_between_injury),
+            min = min(days_between_injury),
+            max = max(days_between_injury),
+            total = length(days_between_injury)) %>% 
+  reactable(
+    columns = list(
+      sport_1 = colDef(name = "Sport 1"),
+      sport_2 = colDef(name = "Sport 2"),
+      mean = colDef(name = "Mean",
+                    format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      sd = colDef(name = "SD",
+                  format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      min = colDef(name = "Min",
+                   format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      max = colDef(name = "Max",
+                   format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      total = colDef(name = "Total",
+                   format = colFormat(digits = 2, separators = TRUE, suffix = " individuals"))),
+    pagination = TRUE,
+    striped = TRUE,
+    outlined = TRUE,
+    compact = TRUE,
+    highlight = TRUE,
+    bordered = TRUE
+  )
+```
+
+```{r, include=TRUE}
+spt_tbl
+```
+
+### Sport 2 Injury Type
+
+Table displays the number of lower extremity injuries for individuals who played football and women's soccer. 
+
+```{r, include=FALSE}
+spt_2_tbl <- sport_time_between %>% 
+  group_by(sport_2, injury_2) %>% 
+  summarize(total = n()) %>% 
+  arrange(desc(total)) %>% 
+  reactable(
+    columns = list(
+      sport_2 = colDef(name = "Sport"),
+      injury_2 = colDef(name = "Injury"),
+      total = colDef(name = "Total",
+                     format = colFormat(suffix = " injuries"))),
+    pagination = TRUE,
+    striped = TRUE,
+    outlined = TRUE,
+    compact = TRUE,
+    highlight = TRUE,
+    bordered = TRUE,
+    searchable = TRUE
+  )
+```
+
+```{r, include=TRUE}
+spt_2_tbl
+```
+
+### Box Plot
+
+```{r, include=FALSE}
+sport_tee <- sims_concussion_first_injury_le_second_injury %>% 
+  filter(sport_1 == "Football" | sport_1 == "Women's Soccer",
+         sport_2 == "Football" | sport_2 == "Women's Soccer") %>% 
+  mutate(days_between_injury = as.numeric(days_between_injury))
+
+
+sport_bxp <- ggboxplot(
+  sport_tee, x = "sport_2", y = "days_between_injury", 
+  ylab = "Number of Days", xlab = "Sport", add = "jitter",
+  title = "Days Between Injuries"
+  )
+
+sport_bxp +
+  stat_compare_means(method = "t.test", hjust = -0.2)
+```
+
+```{r, include=TRUE}
+sport_bxp +
+  stat_compare_means(method = "t.test", hjust = -0.2)
+```
+
+### *T*-Test Results
+
+```{r, include=FALSE}
+sport_tee_results <- sport_tee %>% 
+  t_test(days_between_injury ~ sport_2) %>% 
+  add_significance()
+
+sport_tee_results
+```
+
+```{r, include=TRUE}
+sport_tee_results 
+```
+
+## School {.tabset .tabset-fade .tabset-pills}
+
+Schools with 20 or more individuals included. 
+
+### Descriptive Statistics 
+
+Table displayed statistics of the number of days between injuries for individuals who attend Kalaheo High School, Maui High School, and Mililani High Schol.
+
+```{r, include=FALSE}
+school_analysis <- sims_concussion_first_injury_le_second_injury %>% 
+  filter(school_2 == "Maui High School" |
+           school_2 == "Kalaheo High School" |
+           school_2 == "Mililani High School") %>% 
+  mutate(days_between_injury = as.numeric(days_between_injury))
+
+
+school_tbl <- school_analysis %>% 
+  group_by(school_2) %>% 
+  summarize(mean = mean(days_between_injury),
+            sd = sd(days_between_injury),
+            min = min(days_between_injury),
+            max = max(days_between_injury),
+            total = length(days_between_injury)) %>% 
+  reactable(
+    columns = list(
+      school_2 = colDef(name = "School"),
+      mean = colDef(name = "Mean",
+                    format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      sd = colDef(name = "SD",
+                  format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      min = colDef(name = "Min",
+                   format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      max = colDef(name = "Max",
+                   format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      total = colDef(name = "Total",
+                   format = colFormat(digits = 2, separators = TRUE, suffix = " individuals"))),
+    pagination = TRUE,
+    striped = TRUE,
+    outlined = TRUE,
+    compact = TRUE,
+    highlight = TRUE,
+    bordered = TRUE
+  )
+```
+
+```{r, include=TRUE}
+school_tbl
+```
+
+### Boxplot
+
+```{r, include=FALSE}
+school_analysis <- sims_concussion_first_injury_le_second_injury %>% 
+  filter(school_2 == "Maui High School" |
+           school_2 == "Kalaheo High School" |
+           school_2 == "Mililani High School") %>% 
+  mutate(days_between_injury = as.numeric(days_between_injury))
+
+sch_plot <- ggboxplot(school_analysis, x = "school_2", y = "days_between_injury", 
+          color = "school_2", palette = c("#00AFBB", "#E7B800", "#FC4E07"),
+          order = c("Maui High School", "Kalaheo High School", "Mililani High School"),
+          ylab = "Number of Days", xlab = "", add = "jitter")
+
+```
+
+```{r, include=TRUE}
+sch_plot
+```
+
+### Anova 
+
+The difference between the mean number of days between injury across the three high schools is significantly different. Students at Mililani High School, on average, experienced a much longer duration of time between injuries than students at Kalaheo High School and Maui High School.
+
+```{r, include=FALSE}
+school_res_aov <- aov(days_between_injury ~ school_2, data = school_analysis)
+
+summary(school_res_aov)
+```
+
+```{r, include=TRUE}
+summary(school_res_aov)
+
 ```
