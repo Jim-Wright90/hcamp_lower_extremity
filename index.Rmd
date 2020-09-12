@@ -1529,6 +1529,119 @@ days_missed_concussion
 days_missed_le
 ```
 
+## Days Missed Visualizations {.tabset .tabset-fade .tabset-pills}
+
+### Concussion Total
+
+```{r, include=TRUE}
+ggplot(days_missed_data, aes(days_missed_concussion)) +
+  geom_histogram(fill = "#56B4E9",
+                color = "white", 
+                alpha = 0.9,
+                bins = 10) +
+  labs(x = "Number of Days",
+       y = "Number of Individuals",
+       title = "Days Missed Following Concussion")
+```
+
+### Concussion by Gender
+
+```{r, include=TRUE}
+ggplot(days_missed_data, aes(days_missed_concussion)) +
+  geom_histogram(fill = "#56B4E9",
+                color = "white", 
+                alpha = 0.9,
+                bins = 10) +
+  facet_wrap(~gender) +
+  labs(x = "Number of Days",
+       y = "Number of Individuals",
+       title = "Days Missed Following Concussion")
+```
+
+### Concussion by League
+
+```{r, include=TRUE}
+ggplot(days_missed_data, aes(days_missed_concussion)) +
+  geom_histogram(fill = "#56B4E9",
+                color = "white", 
+                alpha = 0.9,
+                bins = 10) +
+  facet_wrap(~league) +
+  labs(x = "Number of Days",
+       y = "Number of Individuals",
+       title = "Days Missed Following Concussion")
+```
+
+### Concussion by Level
+
+```{r, include=TRUE}
+ggplot(days_missed_data, aes(days_missed_concussion)) +
+  geom_histogram(fill = "#56B4E9",
+                color = "white", 
+                alpha = 0.9,
+                bins = 10) +
+  facet_wrap(~level_1) +
+  labs(x = "Number of Days",
+       y = "Number of Individuals",
+       title = "Days Missed Following Concussion")
+```
+
+
+### Lower Extremity Total
+
+```{r, include=TRUE}
+ggplot(days_missed_data, aes(days_missed_lower_extremity)) +
+  geom_histogram(fill = "#56B4E9",
+                color = "white", 
+                alpha = 0.9,
+                bins = 10) +
+  labs(x = "Number of Days",
+       y = "Number of Individuals",
+       title = "Days Missed Following Lower Extremity Injury")
+```
+
+### Lower Extremity by Gender
+
+```{r, include=TRUE}
+ggplot(days_missed_data, aes(days_missed_lower_extremity)) +
+  geom_histogram(fill = "#56B4E9",
+                color = "white", 
+                alpha = 0.9,
+                bins = 10) +
+  facet_wrap(~gender) +
+  labs(x = "Number of Days",
+       y = "Number of Individuals",
+       title = "Days Missed Following Lower Extremity Injury")
+```
+
+### Lower Extremity by League
+
+```{r, include=TRUE}
+ggplot(days_missed_data, aes(days_missed_lower_extremity)) +
+  geom_histogram(fill = "#56B4E9",
+                color = "white", 
+                alpha = 0.9,
+                bins = 10) +
+  facet_wrap(~league) +
+  labs(x = "Number of Days",
+       y = "Number of Individuals",
+       title = "Days Missed Following Lower Extremity Injury")
+```
+
+### Lower Extremity by Level
+
+```{r, include=TRUE}
+ggplot(days_missed_data, aes(days_missed_lower_extremity)) +
+  geom_histogram(fill = "#56B4E9",
+                color = "white", 
+                alpha = 0.9,
+                bins = 10) +
+  facet_wrap(~level_2) +
+  labs(x = "Number of Days",
+       y = "Number of Individuals",
+       title = "Days Missed Following lower Extremity Injury")
+```
+
 ## *T*-Test Across Entire Sample {.tabset .tabset-fade .tabset-pills}
 
 ```{r, include=FALSE}
@@ -1705,7 +1818,7 @@ gender_days_missed_le_bxp <- ggplot(gender_le_days_missed_tee, aes(gender, days_
 gender_days_missed_le_bxp
 ```
 
-### Concussion *T*-Test Results
+### Lower Extremity *T*-Test Results
 
 ```{r, include=FALSE}
 gender_days_missed_le_tee_results <- gender_le_days_missed_tee %>% 
@@ -1715,4 +1828,184 @@ gender_days_missed_le_tee_results <- gender_le_days_missed_tee %>%
 
 ```{r, include=TRUE}
 gender_days_missed_le_tee_results
+```
+
+## Age {.tabset .tabset-fade .tabset-pills}
+
+There does not appear to be a strong relationship between age and the number of days missed following either a concussion or lower extremity injury. 
+
+### Concussion
+
+```{r, include=TRUE}
+ggplot(days_missed_data, aes(age_1, days_missed_concussion)) +
+  geom_point() +
+  geom_smooth() +
+  labs(x = "Age",
+       y = "Number of Days",
+       title = "Days Missed Following Concussion Related to Age")
+
+```
+
+### Lower Extremity Injury 
+
+```{r, include=TRUE}
+ggplot(days_missed_data, aes(age_2, days_missed_lower_extremity)) +
+  geom_point() +
+  geom_smooth() +
+  labs(x = "Age",
+       y = "Number of Days",
+       title = "Days Missed Following Lower Extremity Injury Related to Age")
+
+```
+
+## Sport {.tabset .tabset-fade .tabset-pills}
+
+This section primarily explores the number of days missed following injuries for Football and Women's Soccer as those are the two most common sports at time of concussion and lower extremity injury. 
+
+### Descriptive Statistics Concussion
+
+```{r, include=FALSE}
+sport_days_missed <- days_missed_data %>% 
+  filter(sport_1 == "Football" | sport_1 == "Women's Soccer",
+         sport_2 == "Football" | sport_2 == "Women's Soccer") 
+
+days_missed_spt_tbl <- sport_days_missed %>% 
+  group_by(sport_1) %>% 
+  summarize(mean = mean(days_missed_concussion),
+            sd = sd(days_missed_concussion),
+            min = min(days_missed_concussion),
+            max = max(days_missed_concussion),
+            total = length(days_missed_concussion)) %>% 
+  reactable(
+    columns = list(
+      sport_1 = colDef(name = "Sport"),
+      mean = colDef(name = "Mean",
+                    format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      sd = colDef(name = "SD",
+                  format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      min = colDef(name = "Min",
+                   format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      max = colDef(name = "Max",
+                   format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      total = colDef(name = "Total",
+                   format = colFormat(digits = 2, separators = TRUE, suffix = " individuals"))),
+    pagination = TRUE,
+    striped = TRUE,
+    outlined = TRUE,
+    compact = TRUE,
+    highlight = TRUE,
+    bordered = TRUE
+  )
+```
+
+```{r, include=TRUE}
+days_missed_spt_tbl
+```
+
+### Descriptive Statistics Lower Extremity Injury
+
+```{r, include=FALSE}
+days_missed_spt_tbl_2 <- sport_days_missed %>% 
+  group_by(sport_2) %>% 
+  summarize(mean = mean(days_missed_lower_extremity),
+            sd = sd(days_missed_lower_extremity),
+            min = min(days_missed_lower_extremity),
+            max = max(days_missed_lower_extremity),
+            total = length(days_missed_lower_extremity)) %>% 
+  reactable(
+    columns = list(
+      sport_2 = colDef(name = "Sport"),
+      mean = colDef(name = "Mean",
+                    format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      sd = colDef(name = "SD",
+                  format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      min = colDef(name = "Min",
+                   format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      max = colDef(name = "Max",
+                   format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      total = colDef(name = "Total",
+                   format = colFormat(digits = 2, separators = TRUE, suffix = " individuals"))),
+    pagination = TRUE,
+    striped = TRUE,
+    outlined = TRUE,
+    compact = TRUE,
+    highlight = TRUE,
+    bordered = TRUE
+  )
+```
+
+```{r, include=TRUE}
+days_missed_spt_tbl_2
+```
+
+### Concussion Box Plot 
+
+```{r, include=FALSE}
+
+sport_concussion_days_missed_tee <- days_missed_data %>% 
+  filter(sport_1 == "Football" | sport_1 == "Women's Soccer",
+         sport_2 == "Football" | sport_2 == "Women's Soccer") 
+
+
+sport_days_missed_concussion_bxp <- ggplot(sport_concussion_days_missed_tee, aes(sport_1, days_missed_concussion, color = sport_1)) +
+  geom_boxplot() +
+  geom_jitter(position = position_jitter(0.2)) +
+  scale_color_OkabeIto() +
+  theme(legend.position = "none") +
+  labs(x = "",
+       y = "Number of Days",
+       title = "Days Missed Following Concussion") +
+  stat_compare_means(method = "t.test", hjust = -0.2)
+```
+
+```{r, include=TRUE}
+sport_days_missed_concussion_bxp
+```
+
+### Concussion *T*-Test Results
+
+```{r, include=FALSE}
+sport_days_missed_concussion_tee_results <- sport_concussion_days_missed_tee %>% 
+  t_test(days_missed_concussion ~ sport_1) %>% 
+  add_significance()
+```
+
+```{r, include=TRUE}
+sport_days_missed_concussion_tee_results
+```
+
+### Lower Extremity Box Plot 
+
+```{r, include=FALSE}
+
+sport_le_days_missed_tee <- days_missed_data %>% 
+  filter(sport_1 == "Football" | sport_1 == "Women's Soccer",
+         sport_2 == "Football" | sport_2 == "Women's Soccer") 
+
+
+sport_days_missed_le_bxp <- ggplot(sport_le_days_missed_tee, aes(sport_2, days_missed_lower_extremity, color = sport_2)) +
+  geom_boxplot() +
+  geom_jitter(position = position_jitter(0.2)) +
+  scale_color_OkabeIto() +
+  theme(legend.position = "none") +
+  labs(x = "",
+       y = "Number of Days",
+       title = "Days Missed Following Lower Extremity Injury") +
+  stat_compare_means(method = "t.test", hjust = -0.2)
+```
+
+```{r, include=TRUE}
+sport_days_missed_le_bxp
+```
+
+### Lower Extremity *T*-Test Results
+
+```{r, include=FALSE}
+sport_days_missed_le_tee_results <- sport_le_days_missed_tee %>% 
+  t_test(days_missed_lower_extremity ~ sport_2) %>% 
+  add_significance()
+```
+
+```{r, include=TRUE}
+sport_days_missed_le_tee_results
 ```
