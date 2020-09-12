@@ -1248,7 +1248,7 @@ Schools with 20 or more individuals included.
 
 ### Descriptive Statistics 
 
-Table displayed statistics of the number of days between injuries for individuals who attend Kalaheo High School, Maui High School, and Mililani High Schol.
+Table displays statistics of the number of days between injuries for individuals who attend Kalaheo High School, Maui High School, and Mililani High School.
 
 ```{r, include=FALSE}
 school_analysis <- sims_concussion_first_injury_le_second_injury %>% 
@@ -1346,8 +1346,6 @@ pairwise.t.test(school_analysis$days_between_injury,
 
 
 ## Level {.tabset .tabset-fade .tabset-pills}
-
-Schools with 20 or more individuals included. 
 
 ### Descriptive Statistics 
 
@@ -1862,7 +1860,7 @@ ggplot(days_missed_data, aes(age_2, days_missed_lower_extremity)) +
 
 This section primarily explores the number of days missed following injuries for Football and Women's Soccer as those are the two most common sports at time of concussion and lower extremity injury. 
 
-### Descriptive Statistics Concussion
+### Days Missed Following Concussion
 
 ```{r, include=FALSE}
 sport_days_missed <- days_missed_data %>% 
@@ -1902,7 +1900,7 @@ days_missed_spt_tbl <- sport_days_missed %>%
 days_missed_spt_tbl
 ```
 
-### Descriptive Statistics Lower Extremity Injury
+### Days Missed Following Lower Extremity Injury
 
 ```{r, include=FALSE}
 days_missed_spt_tbl_2 <- sport_days_missed %>% 
@@ -2008,4 +2006,364 @@ sport_days_missed_le_tee_results <- sport_le_days_missed_tee %>%
 
 ```{r, include=TRUE}
 sport_days_missed_le_tee_results
+```
+
+
+## School {.tabset .tabset-fade .tabset-pills}
+
+Schools with 20 or more individuals included. Tables display statistics of the number of days missed following a concussion for individuals who attend Kalaheo High School, Maui High School, and Mililani High School.
+
+### Days Missed Following Concussion
+
+
+```{r, include=FALSE}
+days_missed_concussion_school_analysis <- days_missed_data %>% 
+  filter(school_1 == "Maui High School" |
+           school_1 == "Kalaheo High School" |
+           school_1 == "Mililani High School",
+          school_2 == "Maui High School" |
+           school_2 == "Kalaheo High School" |
+           school_2 == "Mililani High School") 
+
+days_missed_concussion_school_tbl <- days_missed_concussion_school_analysis %>% 
+  group_by(school_1) %>% 
+  summarize(mean = mean(days_missed_concussion),
+            sd = sd(days_missed_concussion),
+            min = min(days_missed_concussion),
+            max = max(days_missed_concussion),
+            total = length(days_missed_concussion)) %>% 
+  reactable(
+    columns = list(
+      school_1 = colDef(name = "School"),
+      mean = colDef(name = "Mean",
+                    format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      sd = colDef(name = "SD",
+                  format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      min = colDef(name = "Min",
+                   format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      max = colDef(name = "Max",
+                   format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      total = colDef(name = "Total",
+                   format = colFormat(digits = 2, separators = TRUE, suffix = " individuals"))),
+    pagination = TRUE,
+    striped = TRUE,
+    outlined = TRUE,
+    compact = TRUE,
+    highlight = TRUE,
+    bordered = TRUE
+  )
+```
+
+```{r, include=TRUE}
+days_missed_concussion_school_tbl
+```
+
+
+### Days Missed Following Lower Extremity Injury
+
+
+```{r, include=FALSE}
+
+days_missed_le_school_tbl <- days_missed_concussion_school_analysis %>% 
+  group_by(school_2) %>% 
+  summarize(mean = mean(days_missed_lower_extremity),
+            sd = sd(days_missed_lower_extremity),
+            min = min(days_missed_lower_extremity),
+            max = max(days_missed_lower_extremity),
+            total = length(days_missed_lower_extremity)) %>% 
+  reactable(
+    columns = list(
+      school_2 = colDef(name = "School"),
+      mean = colDef(name = "Mean",
+                    format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      sd = colDef(name = "SD",
+                  format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      min = colDef(name = "Min",
+                   format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      max = colDef(name = "Max",
+                   format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      total = colDef(name = "Total",
+                   format = colFormat(digits = 2, separators = TRUE, suffix = " individuals"))),
+    pagination = TRUE,
+    striped = TRUE,
+    outlined = TRUE,
+    compact = TRUE,
+    highlight = TRUE,
+    bordered = TRUE
+  )
+```
+
+```{r, include=TRUE}
+days_missed_le_school_tbl
+```
+
+### Boxplot Concussion
+
+```{r, include=FALSE}
+concussion_school_analysis <- days_missed_data %>% 
+  filter(school_1 == "Maui High School" |
+           school_1 == "Kalaheo High School" |
+           school_1 == "Mililani High School",
+           school_2 == "Maui High School" |
+           school_2 == "Kalaheo High School" |
+           school_2 == "Mililani High School")
+
+concussion_sch_bxp <- ggplot(concussion_school_analysis, 
+                             aes(school_1, days_missed_concussion, color = school_1)) +
+  geom_boxplot() +
+  geom_jitter(position = position_jitter(0.2)) +
+  scale_color_OkabeIto() +
+  theme(legend.position = "none") +
+  labs(x = "",
+       y = "Number of Days",
+       title = "Days Missed Following Concussion") +
+  stat_compare_means(method = "anova", hjust = -0.2)
+```
+
+```{r, include=TRUE}
+concussion_sch_bxp
+```
+
+### Anova Concussion
+
+The difference between the mean number of days missed following a concussion across the three high schools is not significantly different. 
+
+```{r, include=FALSE}
+concussion_school_res_aov <- aov(days_missed_concussion ~ school_1, data = concussion_school_analysis)
+
+summary(concussion_school_res_aov)
+```
+
+```{r, include=TRUE}
+summary(concussion_school_res_aov)
+```
+
+
+### Boxplot Lower Extremity Injury
+
+```{r, include=FALSE}
+le_school_analysis <- days_missed_data %>% 
+  filter(school_1 == "Maui High School" |
+           school_1 == "Kalaheo High School" |
+           school_1 == "Mililani High School",
+           school_2 == "Maui High School" |
+           school_2 == "Kalaheo High School" |
+           school_2 == "Mililani High School")
+
+le_sch_bxp <- ggplot(concussion_school_analysis, 
+                             aes(school_2, days_missed_lower_extremity, color = school_2)) +
+  geom_boxplot() +
+  geom_jitter(position = position_jitter(0.2)) +
+  scale_color_OkabeIto() +
+  theme(legend.position = "none") +
+  labs(x = "",
+       y = "Number of Days",
+       title = "Days Missed Following Lower Extremity Injury") +
+  stat_compare_means(method = "anova", hjust = -0.2)
+```
+
+```{r, include=TRUE}
+le_sch_bxp
+```
+
+### Anova Lower Extremity Injury
+
+The difference between the mean number of days missed following a lower extremity injury across the three high schools is not significantly different. 
+
+```{r, include=FALSE}
+le_school_res_aov <- aov(days_missed_lower_extremity ~ school_2, data = le_school_analysis)
+
+summary(le_school_res_aov)
+```
+
+```{r, include=TRUE}
+summary(le_school_res_aov)
+```
+
+
+## Level {.tabset .tabset-fade .tabset-pills}
+
+### Days Missed Following Concussion
+
+
+```{r, include=FALSE}
+
+days_missed_concussion_level_analysis <- days_missed_data %>% 
+  mutate(level_1 = recode(level_1,
+                          `JV` = "Junior Varsity"),
+         level_2 = recode(level_2,
+                          `JV` = "Junior Varsity")) %>% 
+  filter(level_1 == "Junior Varsity" |
+         level_1 == "Varsity",
+         level_2 == "Junior Varsity" |
+         level_2 == "Varsity")
+          
+
+days_missed_concussion_level_tbl <- days_missed_concussion_level_analysis %>% 
+  group_by(level_1) %>% 
+  summarize(mean = mean(days_missed_concussion),
+            sd = sd(days_missed_concussion),
+            min = min(days_missed_concussion),
+            max = max(days_missed_concussion),
+            total = length(days_missed_concussion)) %>% 
+  reactable(
+    columns = list(
+      level_1 = colDef(name = "Level"),
+      mean = colDef(name = "Mean",
+                    format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      sd = colDef(name = "SD",
+                  format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      min = colDef(name = "Min",
+                   format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      max = colDef(name = "Max",
+                   format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      total = colDef(name = "Total",
+                   format = colFormat(digits = 2, separators = TRUE, suffix = " individuals"))),
+    pagination = TRUE,
+    striped = TRUE,
+    outlined = TRUE,
+    compact = TRUE,
+    highlight = TRUE,
+    bordered = TRUE
+  )
+```
+
+```{r, include=TRUE}
+days_missed_concussion_level_tbl
+```
+
+
+### Days Missed Following Lower Extremity Injury
+
+
+```{r, include=FALSE}
+
+days_missed_le_level_tbl <- days_missed_concussion_level_analysis %>% 
+  group_by(level_2) %>% 
+  summarize(mean = mean(days_missed_lower_extremity),
+            sd = sd(days_missed_lower_extremity),
+            min = min(days_missed_lower_extremity),
+            max = max(days_missed_lower_extremity),
+            total = length(days_missed_lower_extremity)) %>% 
+  reactable(
+    columns = list(
+      level_2 = colDef(name = "Level"),
+      mean = colDef(name = "Mean",
+                    format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      sd = colDef(name = "SD",
+                  format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      min = colDef(name = "Min",
+                   format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      max = colDef(name = "Max",
+                   format = colFormat(digits = 2, separators = TRUE, suffix = " days")),
+      total = colDef(name = "Total",
+                   format = colFormat(digits = 2, separators = TRUE, suffix = " individuals"))),
+    pagination = TRUE,
+    striped = TRUE,
+    outlined = TRUE,
+    compact = TRUE,
+    highlight = TRUE,
+    bordered = TRUE
+  )
+```
+
+```{r, include=TRUE}
+days_missed_le_level_tbl
+```
+
+
+### Concussion Box Plot 
+
+```{r, include=FALSE}
+level_days_missed_concussion_bxp <- ggplot(days_missed_concussion_level_analysis, aes(level_1, days_missed_concussion, color = level_1)) +
+  geom_boxplot() +
+  geom_jitter(position = position_jitter(0.2)) +
+  scale_color_OkabeIto() +
+  theme(legend.position = "none") +
+  labs(x = "",
+       y = "Number of Days",
+       title = "Days Missed Following Concussion") +
+  stat_compare_means(method = "t.test", hjust = -0.2)
+```
+
+```{r, include=TRUE}
+level_days_missed_concussion_bxp
+```
+
+### Concussion *T*-Test Results
+
+```{r, include=FALSE}
+level_days_missed_concussion_tee_results <- days_missed_concussion_level_analysis %>% 
+  t_test(days_missed_concussion ~ level_1) %>% 
+  add_significance()
+```
+
+```{r, include=TRUE}
+level_days_missed_concussion_tee_results
+```
+
+### Lower Extremity Box Plot 
+
+```{r, include=FALSE}
+level_days_missed_le_bxp <- ggplot(days_missed_concussion_level_analysis, aes(level_2, days_missed_lower_extremity, color = level_2)) +
+  geom_boxplot() +
+  geom_jitter(position = position_jitter(0.2)) +
+  scale_color_OkabeIto() +
+  theme(legend.position = "none") +
+  labs(x = "",
+       y = "Number of Days",
+       title = "Days Missed Following Lower Extremity Injury") +
+  stat_compare_means(method = "t.test", hjust = -0.2)
+```
+
+```{r, include=TRUE}
+level_days_missed_le_bxp
+```
+
+### Concussion *T*-Test Results
+
+Varsity athletes, on average, missed a significantly larger amount of time following a lower extremity injury (*M* = 226.43 days) compared to junior varsity athletes following a lower extremity injury (*M* = 79.56 days).
+
+```{r, include=FALSE}
+level_days_missed_le_tee_results <- days_missed_concussion_level_analysis %>% 
+  t_test(days_missed_lower_extremity ~ level_2) %>% 
+  add_significance()
+```
+
+```{r, include=TRUE}
+level_days_missed_le_tee_results
+```
+
+# Impact Scores  {.tabset .tabset-fade .tabset-pills}
+
+Scores represent sample of individuals ages 12-18 who sustained a lower extremity injury within 1 year of their concussion
+
+## Verbal Memory
+
+```{r, include=TRUE}
+create_react(sims_impact_data_le_injury_only, verbal_memory)
+```
+
+## Visual Memory
+
+```{r, include=TRUE}
+create_react(sims_impact_data_le_injury_only, visual_memory)
+```
+
+## Visual Motor
+
+```{r, include=TRUE}
+create_react(sims_impact_data_le_injury_only, visual_motor)
+```
+
+## Impulse Control
+
+```{r, include=TRUE}
+create_react(sims_impact_data_le_injury_only, impulse_control)
+```
+
+## Reaction Time
+
+```{r, include=TRUE}
+create_react(sims_impact_data_le_injury_only, reaction_time)
 ```
